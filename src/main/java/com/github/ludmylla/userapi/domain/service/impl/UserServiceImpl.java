@@ -39,6 +39,13 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(mapper.map(dto, User.class));
     }
 
+    @Override
+    public User update(UserDTO dto, Long id) {
+        User userActual = findById(id);
+        dto.setId(userActual.getId());
+        return userRepository.save(mapper.map(dto, User.class));
+    }
+
     private void findByEmailUsed(UserDTO dto){
       Optional<User> user = userRepository.findByEmail(dto.getEmail());
 
