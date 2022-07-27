@@ -125,7 +125,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void shouldReturnSuccess_WhenUpdateUser() {
+    void shouldReturnSuccess_WhenUpdateToUser() {
         Mockito.when(userRepository.save(any())).thenReturn(user);
 
         User response = userServiceImpl.update(dto);
@@ -151,11 +151,16 @@ class UserServiceImplTest {
             assertEquals(DataIntegrityViolationException.class, ex.getClass());
             assertEquals(EMAIL_IN_USE, ex.getMessage());
         }
-
     }
 
     @Test
-    void testDelete() {
+    void shouldReturnSuccess_WhenToDeleteUser() {
+        Mockito.when(userRepository.findById(anyLong())).thenReturn(userOptional);
+
+        Mockito.doNothing().when(userRepository).deleteById(anyLong());
+        userServiceImpl.delete(ID);
+
+        Mockito.verify(userRepository, Mockito.times(1)).deleteById(anyLong());
     }
 
     private void prepareData() {
