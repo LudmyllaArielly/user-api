@@ -14,6 +14,7 @@ import org.mockito.MockitoAnnotations;
 import org.modelmapper.ModelMapper;
 
 import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.any;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -92,8 +93,18 @@ class UserServiceImplTest {
     }
 
     @Test
-    void testCreate() {
+    void shouldReturnSuccess_WhenToCreateUser() {
+        Mockito.when(userRepository.save(any())).thenReturn(user);
 
+        User response = userServiceImpl.create(dto);
+
+        assertNotNull(response);
+        assertEquals(User.class, response.getClass());
+
+        assertEquals(ID, response.getId());
+        assertEquals(NAME, response.getName());
+        assertEquals(EMAIL, response.getEmail());
+        assertEquals(PASSWORD, response.getPassword());
     }
 
     @Test
