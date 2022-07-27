@@ -3,6 +3,7 @@ package com.github.ludmylla.userapi.domain.service.impl;
 import com.github.ludmylla.userapi.domain.dto.UserDTO;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.repository.UserRepository;
+import com.github.ludmylla.userapi.domain.service.exceptions.ObjectNotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ class UserServiceImplTest {
     public static final String NAME = "Maria";
     public static final String EMAIL = "maria@xyz.com";
     public static final String PASSWORD = "123";
+    public static final String OBJECT_NOT_FOUND = "Object not found.";
 
 
     @Mock
@@ -61,7 +63,17 @@ class UserServiceImplTest {
     }
 
     @Test
-    void testFindAll() {
+    void shouldReturnObjectNotFoundException_WhenToConsultUserWithIdThatDoesNotExist() {
+        Mockito.when(userRepository.findById(anyLong())).thenThrow(new ObjectNotFoundException(OBJECT_NOT_FOUND));
+
+        try {
+            userServiceImpl.findById(ID);
+
+        }catch (Exception ex) {
+            assertEquals(ObjectNotFoundException.class, ex.getClass());
+            assertEquals(OBJECT_NOT_FOUND, ex.getMessage());
+        }
+
 
     }
 
