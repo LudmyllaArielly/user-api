@@ -140,6 +140,21 @@ class UserServiceImplTest {
     }
 
     @Test
+    void shouldReturnDataIntegrityViolationException_WhenToUpdateAUserWithEmailInUser() {
+        Mockito.when(userRepository.findByEmail(anyString())).thenReturn(userOptional);
+
+        try {
+            userOptional.get().setId(2L);
+            userServiceImpl.update(dto);
+
+        }catch (Exception ex) {
+            assertEquals(DataIntegrityViolationException.class, ex.getClass());
+            assertEquals(EMAIL_IN_USE, ex.getMessage());
+        }
+
+    }
+
+    @Test
     void testDelete() {
     }
 
