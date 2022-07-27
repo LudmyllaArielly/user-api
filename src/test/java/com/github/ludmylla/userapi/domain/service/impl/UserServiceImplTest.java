@@ -3,6 +3,7 @@ package com.github.ludmylla.userapi.domain.service.impl;
 import com.github.ludmylla.userapi.domain.dto.UserDTO;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.repository.UserRepository;
+import com.github.ludmylla.userapi.domain.service.exceptions.DataIntegrityViolationException;
 import com.github.ludmylla.userapi.domain.service.exceptions.ObjectNotFoundException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,6 +16,7 @@ import org.modelmapper.ModelMapper;
 
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyString;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,6 +32,7 @@ class UserServiceImplTest {
     public static final String PASSWORD = "123";
     public static final int INDEX = 0;
     public static final String OBJECT_NOT_FOUND = "Object not found.";
+    public static final String EMAIL_IN_USE = "Email in use";
 
 
     @Mock
@@ -105,6 +108,20 @@ class UserServiceImplTest {
         assertEquals(NAME, response.getName());
         assertEquals(EMAIL, response.getEmail());
         assertEquals(PASSWORD, response.getPassword());
+    }
+
+    @Test
+    void shouldReturnDataIntegrityViolationException_WhenToCreateAUserWithEmailInUser() {
+        Mockito.when(userRepository.findByEmail(anyString())).thenReturn(userOptional);
+
+        try {
+            userOptional.get().setId(2L);
+            userServiceImpl.create(dto);
+
+        }catch (Exception ex) {
+            assertEquals(DataIntegrityViolationException.class, ex.getClass());
+            assertEquals(EMAIL_IN_USE, ex.getMessage());
+        }
     }
 
     @Test
