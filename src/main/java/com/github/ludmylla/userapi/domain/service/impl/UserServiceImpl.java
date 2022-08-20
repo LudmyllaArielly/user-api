@@ -31,9 +31,20 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private RoleServiceImpl roleService;
 
     @Override
+    public User create(User user) {
+        validationCreate(user);
+        return userRepository.save(user);
+    }
+
+    @Override
     public User findById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("Object not found."));
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
     @Override
@@ -42,16 +53,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public User create(User user) {
-        findByEmailUsed(user);
-        verifyIfUserRoleExits(user);
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
-    }
-
-    @Override
-    public User update(User user) {
-        findByEmailUsed(user);
+    public User update(Long id, User user) {
+        validationUpdate(user, id);
         return userRepository.save(user);
     }
 
@@ -59,6 +62,19 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public void delete(Long id) {
         findById(id);
         userRepository.deleteById(id);
+    }
+
+    private void validationCreate(User user){
+        findByEmailUsed(user);
+        verifyIfUserRoleExits(user);
+        encryptPassword(user);
+    }
+
+    private void validationUpdate(User user, Long id){
+        findById(id);
+        findByEmailUsed(user);
+        verifyIfUserRoleExits(user);
+        encryptPassword(user);
     }
 
     private void findByEmailUsed(User user) {
@@ -84,9 +100,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
+    private void encryptPassword(User user){
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    }
+
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(email);
+        User user = findByEmail(email);
         if (user == null) {
             throw new UsernameNotFoundException("User not found.");
         }
@@ -100,10 +120,5 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         });
         return authorities;
     }
-
-
-
-
-
 
 }
