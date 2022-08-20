@@ -4,9 +4,11 @@ import com.github.ludmylla.userapi.domain.model.Role;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.repository.UserRepository;
 import com.github.ludmylla.userapi.domain.service.UserService;
-import com.github.ludmylla.userapi.domain.service.exceptions.DataIntegrityViolationException;
+import com.github.ludmylla.userapi.domain.service.exceptions.BusinessException;
 import com.github.ludmylla.userapi.domain.service.exceptions.RoleNotFoundException;
+import com.github.ludmylla.userapi.util.Messages;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -32,8 +35,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public User create(User user) {
-        validationUser(user);
-        return userRepository.save(user);
+        try {
+            validationUser(user);
+            return userRepository.save(user);
+        }catch (RoleNotFoundException ex) {
+            throw new BusinessException(ex.getMessage(), ex);
+        }catch (DataIntegrityViolationException ex){
+            throw  new BusinessException(ex.getMessage(), ex);
+        }
     }
 
     @Override
@@ -54,10 +63,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public User update(Long id, User user) {
-        User userActual = findById(id);
-        user.setId(userActual.getId());
-        validationUser(user);
-        return userRepository.save(user);
+        try {
+            User userActual = findById(id);
+            user.setId(userActual.getId());
+            validationUser(user);
+            return userRepository.save(user);
+        }catch (RoleNotFoundException ex){
+            throw new BusinessException(ex.getMessage(), ex);
+        }
     }
 
     @Override
@@ -73,10 +86,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     private void findByEmailUsed(User user) {
-        User userEmail = userRepository.findByEmail(user.getEmail());
+        Optional<User> userEmail = userRepository.findByEmailOptional(user.getEmail());
 
-        if (userEmail != null && !userEmail.getEmail().equals(user.getEmail())) {
-            throw new DataIntegrityViolationException("Email in use");
+        if (userEmail.isPresent() && !userEmail.get().equals(user)) {
+            throw new BusinessException(Messages.MSG_EMAIL_IN_USE);
         }
     }
 

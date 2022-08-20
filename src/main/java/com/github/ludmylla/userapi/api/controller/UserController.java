@@ -4,7 +4,6 @@ import com.github.ludmylla.userapi.domain.dto.AuthToken;
 import com.github.ludmylla.userapi.domain.dto.LoginDTO;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.service.UserService;
-import com.github.ludmylla.userapi.domain.service.exceptions.RoleNotFoundException;
 import com.github.ludmylla.userapi.security.TokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,12 +31,8 @@ public class UserController {
 
     @PostMapping("/signUp")
     public ResponseEntity<User> create(@RequestBody User user){
-        try {
-            User userSaved = userService.create(user);
-            return ResponseEntity.status(HttpStatus.CREATED).body(userSaved);
-        }catch (RoleNotFoundException ex) {
-            return ResponseEntity.badRequest().build();
-        }
+        User userSaved = userService.create(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(userSaved);
     }
 
     @PostMapping("/signIn")
@@ -78,12 +73,8 @@ public class UserController {
 
     @PutMapping("/{id}")
     public ResponseEntity<User> update (@PathVariable Long id, @RequestBody User user){
-        try {
-            User userUpdated = userService.update(id, user);
-            return ResponseEntity.ok(userUpdated);
-        } catch (RoleNotFoundException ex) {
-            return ResponseEntity.badRequest().build();
-        }
+        User userUpdated = userService.update(id, user);
+        return ResponseEntity.ok(userUpdated);
     }
 
     @DeleteMapping("/{id}")
