@@ -1,6 +1,5 @@
 package com.github.ludmylla.userapi.domain.service;
 
-import com.github.ludmylla.userapi.domain.dto.UserDTO;
 import com.github.ludmylla.userapi.domain.model.User;
 
 import java.util.List;
@@ -11,9 +10,9 @@ public interface UserService {
 
     List<User> findAll();
 
-    User create(UserDTO dto);
+    User create(User user);
 
-    User update(UserDTO dto);
+    User update(User user);
 
     void delete(Long id);
 }
