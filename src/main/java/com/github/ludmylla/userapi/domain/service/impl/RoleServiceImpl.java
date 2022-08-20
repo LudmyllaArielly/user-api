@@ -14,7 +14,7 @@ public class RoleServiceImpl {
 
     public Role findById(Long id){
         return roleRepository.findById(id)
-                .orElseThrow(() -> new RoleNotFoundException("Role not found."));
+                .orElseThrow(() -> new RoleNotFoundException(id));
     }
 
     public Role findByRoleName(String roleName){
