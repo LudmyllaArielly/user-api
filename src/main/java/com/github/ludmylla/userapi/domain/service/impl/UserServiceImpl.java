@@ -32,7 +32,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public User create(User user) {
-        validationCreate(user);
+        validationUser(user);
         return userRepository.save(user);
     }
 
@@ -54,7 +54,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public User update(Long id, User user) {
-        validationUpdate(user, id);
+        User userActual = findById(id);
+        user.setId(userActual.getId());
+        validationUser(user);
         return userRepository.save(user);
     }
 
@@ -64,14 +66,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         userRepository.deleteById(id);
     }
 
-    private void validationCreate(User user){
-        findByEmailUsed(user);
-        verifyIfUserRoleExits(user);
-        encryptPassword(user);
-    }
-
-    private void validationUpdate(User user, Long id){
-        findById(id);
+    private void validationUser(User user){
         findByEmailUsed(user);
         verifyIfUserRoleExits(user);
         encryptPassword(user);
@@ -80,7 +75,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private void findByEmailUsed(User user) {
         User userEmail = userRepository.findByEmail(user.getEmail());
 
-        if (userEmail != null && !userEmail.getId().equals(user.getId())) {
+        if (userEmail != null && !userEmail.getEmail().equals(user.getEmail())) {
             throw new DataIntegrityViolationException("Email in use");
         }
     }
