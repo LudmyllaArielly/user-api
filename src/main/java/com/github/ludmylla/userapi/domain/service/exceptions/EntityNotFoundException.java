@@ -1,6 +1,6 @@
 package com.github.ludmylla.userapi.domain.service.exceptions;
 
-public class EntityNotFoundException extends RuntimeException{
+public class EntityNotFoundException extends BusinessException{
 
     private static final long serialVersionUID = 1L;
 
@@ -8,7 +8,4 @@ public class EntityNotFoundException extends RuntimeException{
         super(message);
     }
 
-    public EntityNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-    }
 }
