@@ -1,31 +1,39 @@
 package com.github.ludmylla.userapi.domain.service.impl;
 
-import com.github.ludmylla.userapi.domain.dto.UserDTO;
+import com.github.ludmylla.userapi.domain.model.Role;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.repository.UserRepository;
 import com.github.ludmylla.userapi.domain.service.UserService;
 import com.github.ludmylla.userapi.domain.service.exceptions.DataIntegrityViolationException;
-import com.github.ludmylla.userapi.domain.service.exceptions.ObjectNotFoundException;
-import org.modelmapper.ModelMapper;
+import com.github.ludmylla.userapi.domain.service.exceptions.RoleNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 
 @Service
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private ModelMapper mapper;
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private RoleServiceImpl roleService;
 
     @Override
     public User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ObjectNotFoundException("Object not found."));
+                .orElseThrow(() -> new UsernameNotFoundException("Object not found."));
     }
 
     @Override
@@ -34,15 +42,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User create(UserDTO dto) {
-        findByEmailUsed(dto);
-        return userRepository.save(mapper.map(dto, User.class));
+    public User create(User user) {
+        findByEmailUsed(user);
+        verifyIfUserRoleExits(user);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        return userRepository.save(user);
     }
 
     @Override
-    public User update(UserDTO dto) {
-        findByEmailUsed(dto);
-        return userRepository.save(mapper.map(dto, User.class));
+    public User update(User user) {
+        findByEmailUsed(user);
+        return userRepository.save(user);
     }
 
     @Override
@@ -51,11 +61,49 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(id);
     }
 
-    private void findByEmailUsed(UserDTO dto){
-      Optional<User> user = userRepository.findByEmail(dto.getEmail());
+    private void findByEmailUsed(User user) {
+        User userEmail = userRepository.findByEmail(user.getEmail());
 
-      if(user.isPresent() && !user.get().getId().equals(dto.getId())){
-        throw new DataIntegrityViolationException("Email in use");
-      }
+        if (userEmail != null && !userEmail.getId().equals(user.getId())) {
+            throw new DataIntegrityViolationException("Email in use");
+        }
     }
+
+    private void verifyIfUserRoleExits(User user){
+        Set<Role> roles = new HashSet<>();
+
+        for(Role role: user.getRoles()){
+
+            Role roleFindById = roleService.findById(role.getId());
+
+            if(roleFindById == null){
+                throw new RoleNotFoundException("Role not exist.");
+            }
+            roles.add(roleFindById);
+            user.setRoles(roles);
+        }
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found.");
+        }
+        return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), getAuthority(user));
+    }
+
+    private Set<SimpleGrantedAuthority> getAuthority(User user) {
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+        user.getRoles().forEach(role -> {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getRoleName()));
+        });
+        return authorities;
+    }
+
+
+
+
+
+
 }
