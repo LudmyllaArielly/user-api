@@ -15,6 +15,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -56,11 +58,40 @@ public class UserController {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<List<User>> findAll(){
+        List<User> list = userService.findAll();
+        return ResponseEntity.ok(list);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<User> findById(@PathVariable Long id){
         User user = userService.findById(id);
         return ResponseEntity.ok(user);
     }
+
+    @GetMapping("/findEmail")
+    public ResponseEntity<User> findByEmail(@RequestParam String email){
+        User user = userService.findByEmail(email);
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> update (@PathVariable Long id, @RequestBody User user){
+        try {
+            User userUpdated = userService.update(id, user);
+            return ResponseEntity.ok(userUpdated);
+        } catch (RoleNotFoundException ex) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id){
+        userService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
 
 
 }
