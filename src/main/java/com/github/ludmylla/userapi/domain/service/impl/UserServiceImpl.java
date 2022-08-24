@@ -39,10 +39,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         try {
             validationUser(user);
             return userRepository.save(user);
-        }catch (RoleNotFoundException ex) {
+        } catch (RoleNotFoundException ex) {
             throw new BusinessException(ex.getMessage(), ex);
-        }catch (DataIntegrityViolationException ex){
-            throw  new BusinessException(ex.getMessage(), ex);
+        } catch (DataIntegrityViolationException ex) {
+            throw new BusinessException(ex.getMessage(), ex);
         }
     }
 
@@ -69,7 +69,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             user.setId(userActual.getId());
             validationUser(user);
             return userRepository.save(user);
-        }catch (RoleNotFoundException ex){
+        } catch (RoleNotFoundException ex) {
+            throw new BusinessException(ex.getMessage(), ex);
+        } catch (DataIntegrityViolationException ex) {
             throw new BusinessException(ex.getMessage(), ex);
         }
     }
@@ -80,7 +82,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         userRepository.deleteById(id);
     }
 
-    private void validationUser(User user){
+    private void validationUser(User user) {
         findByEmailUsed(user);
         verifyIfUserRoleExits(user);
         encryptPassword(user);
@@ -94,14 +96,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
-    private void verifyIfUserRoleExits(User user){
+    private void verifyIfUserRoleExits(User user) {
         Set<Role> roles = new HashSet<>();
 
-        for(Role role: user.getRoles()){
+        for (Role role : user.getRoles()) {
 
             Role roleFindById = roleService.findById(role.getId());
 
-            if(roleFindById == null){
+            if (roleFindById == null) {
                 throw new RoleNotFoundException("Role not exist.");
             }
             roles.add(roleFindById);
@@ -109,7 +111,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
-    private void encryptPassword(User user){
+    private void encryptPassword(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
     }
 
