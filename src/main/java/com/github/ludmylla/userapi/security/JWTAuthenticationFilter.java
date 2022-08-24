@@ -2,7 +2,9 @@ package com.github.ludmylla.userapi.security;
 
 import com.github.ludmylla.userapi.domain.service.impl.UserServiceImpl;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -44,8 +46,13 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 logger.error("The token has expired.", ex);
             } catch (SignatureException ex) {
                 logger.error("Authentication failed. Username or password not valid.", ex);
+            } catch (MalformedJwtException ex) {
+                logger.error("Invalid JWT token.");
+            } catch (UnsupportedJwtException ex) {
+                logger.error("Unsupported JWT token.");
             }
         } else {
+
             logger.warn("A bearer was not found or the header was ignored.");
         }
 
