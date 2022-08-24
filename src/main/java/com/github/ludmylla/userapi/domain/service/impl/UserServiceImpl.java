@@ -6,6 +6,7 @@ import com.github.ludmylla.userapi.domain.repository.UserRepository;
 import com.github.ludmylla.userapi.domain.service.UserService;
 import com.github.ludmylla.userapi.domain.service.exceptions.BusinessException;
 import com.github.ludmylla.userapi.domain.service.exceptions.RoleNotFoundException;
+import com.github.ludmylla.userapi.domain.service.exceptions.UserNotFoundException;
 import com.github.ludmylla.userapi.util.Messages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +36,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Autowired
     private RoleServiceImpl roleService;
 
+    @Transactional
     @Override
     public User create(User user) {
         try {
@@ -49,7 +52,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Override
     public User findById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("Object not found."));
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @Override
@@ -62,13 +65,16 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return userRepository.findAll();
     }
 
+    @Transactional
     @Override
     public User update(Long id, User user) {
         try {
             User userActual = findById(id);
             user.setId(userActual.getId());
             validationUser(user);
+            userRepository.flush();
             return userRepository.save(user);
+
         } catch (RoleNotFoundException ex) {
             throw new BusinessException(ex.getMessage(), ex);
         } catch (DataIntegrityViolationException ex) {
@@ -76,6 +82,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
+    @Transactional
     @Override
     public void delete(Long id) {
         findById(id);
