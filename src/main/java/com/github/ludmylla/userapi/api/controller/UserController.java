@@ -4,16 +4,21 @@ import com.github.ludmylla.userapi.domain.dto.AuthToken;
 import com.github.ludmylla.userapi.domain.dto.LoginDTO;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.service.UserService;
+import com.github.ludmylla.userapi.domain.service.exceptions.UserBadCredentialsException;
 import com.github.ludmylla.userapi.security.TokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -30,13 +35,13 @@ public class UserController {
     private TokenProvider tokenProvider;
 
     @PostMapping("/signUp")
-    public ResponseEntity<User> create(@RequestBody User user){
+    public ResponseEntity<User> create(@RequestBody @Valid User user){
         User userSaved = userService.create(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(userSaved);
     }
 
     @PostMapping("/signIn")
-    public ResponseEntity<?> login (@RequestBody LoginDTO loginDTO)  {
+    public ResponseEntity<?> login (@RequestBody @Valid LoginDTO loginDTO)  {
         try {
             final Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -47,16 +52,20 @@ public class UserController {
             final String token = tokenProvider.generateToken(authentication);
             return ResponseEntity.ok(new AuthToken(token));
 
-        }catch (Exception ex){
-            ex.printStackTrace();
-            return ResponseEntity.badRequest().build();
+        }catch (BadCredentialsException ex){
+            throw new UserBadCredentialsException("Authentication failed. Username or password not valid.");
         }
     }
 
     @GetMapping
     public ResponseEntity<List<User>> findAll(){
-        List<User> list = userService.findAll();
-        return ResponseEntity.ok(list);
+        try {
+            List<User> list = userService.findAll();
+            return ResponseEntity.ok(list);
+        }catch (Exception e){
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/{id}")
@@ -71,6 +80,7 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<User> update (@PathVariable Long id, @RequestBody User user){
         User userUpdated = userService.update(id, user);
@@ -82,7 +92,5 @@ public class UserController {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
-
-
 
 }
