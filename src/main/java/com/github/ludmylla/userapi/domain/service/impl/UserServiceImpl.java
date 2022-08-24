@@ -9,6 +9,7 @@ import com.github.ludmylla.userapi.domain.service.exceptions.RoleNotFoundExcepti
 import com.github.ludmylla.userapi.util.Messages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -57,7 +58,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public List<User> findAll() {
+    public List<User> findAll() throws AccessDeniedException {
         return userRepository.findAll();
     }
 
