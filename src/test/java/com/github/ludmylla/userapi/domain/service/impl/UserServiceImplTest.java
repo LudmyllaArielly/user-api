@@ -1,11 +1,11 @@
 package com.github.ludmylla.userapi.domain.service.impl;
 
-import com.github.ludmylla.userapi.domain.dto.UserDTO;
+import com.github.ludmylla.userapi.domain.model.Role;
 import com.github.ludmylla.userapi.domain.model.User;
+import com.github.ludmylla.userapi.domain.repository.RoleRepository;
 import com.github.ludmylla.userapi.domain.repository.UserRepository;
-import com.github.ludmylla.userapi.domain.service.exceptions.DataIntegrityViolationException;
-import com.github.ludmylla.userapi.domain.service.exceptions.ObjectNotFoundException;
-import org.junit.jupiter.api.Assertions;
+import com.github.ludmylla.userapi.domain.service.exceptions.BusinessException;
+import com.github.ludmylla.userapi.domain.service.exceptions.UserNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -13,6 +13,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.modelmapper.ModelMapper;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.any;
@@ -21,9 +23,12 @@ import static org.mockito.Mockito.anyString;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+@SpringBootTest
 class UserServiceImplTest {
 
     public static final Long ID = 1L;
@@ -31,9 +36,17 @@ class UserServiceImplTest {
     public static final String EMAIL = "maria@xyz.com";
     public static final String PASSWORD = "123";
     public static final int INDEX = 0;
-    public static final String OBJECT_NOT_FOUND = "Object not found.";
+    public static final String USER_NOT_FOUND = "User not found.";
     public static final String EMAIL_IN_USE = "Email in use";
 
+    @Mock(name = "role")
+    RoleRepository roleRepository;
+
+    @InjectMocks
+    RoleServiceImpl roleService;
+
+    @Mock
+    PasswordEncoder passwordEncoder;
 
     @Mock
     UserRepository userRepository;
@@ -44,8 +57,10 @@ class UserServiceImplTest {
     @InjectMocks
     UserServiceImpl userServiceImpl;
 
+    private Set<Role> roles = new HashSet<>();
     private User user;
-    private UserDTO dto;
+    private Role role;
+    private Optional<Role> roleOptional;
     private Optional<User> userOptional;
 
     @BeforeEach
@@ -68,15 +83,15 @@ class UserServiceImplTest {
     }
 
     @Test
-    void shouldReturnObjectNotFoundException_WhenToConsultUserWithIdThatDoesNotExist() {
-        Mockito.when(userRepository.findById(anyLong())).thenThrow(new ObjectNotFoundException(OBJECT_NOT_FOUND));
+    void shouldReturnUserNotFoundException_WhenToConsultUserWithIdThatDoesNotExist() {
+        Mockito.when(userRepository.findById(anyLong())).thenThrow(new UserNotFoundException(USER_NOT_FOUND));
 
         try {
             userServiceImpl.findById(ID);
 
         }catch (Exception ex) {
-            assertEquals(ObjectNotFoundException.class, ex.getClass());
-            assertEquals(OBJECT_NOT_FOUND, ex.getMessage());
+            assertEquals(UserNotFoundException.class, ex.getClass());
+            assertEquals(USER_NOT_FOUND, ex.getMessage());
         }
     }
 
@@ -98,8 +113,10 @@ class UserServiceImplTest {
     @Test
     void shouldReturnSuccess_WhenToCreateUser() {
         Mockito.when(userRepository.save(any())).thenReturn(user);
+        Mockito.when(roleRepository.findById(1L)).thenReturn(roleOptional);
 
-        User response = userServiceImpl.create(dto);
+        Role responseRole = roleService.findById(1L);
+        User response = userServiceImpl.create(user);
 
         assertNotNull(response);
         assertEquals(User.class, response.getClass());
@@ -107,19 +124,19 @@ class UserServiceImplTest {
         assertEquals(ID, response.getId());
         assertEquals(NAME, response.getName());
         assertEquals(EMAIL, response.getEmail());
-        assertEquals(PASSWORD, response.getPassword());
+        assertEquals(passwordEncoder.encode(PASSWORD), response.getPassword());
     }
 
     @Test
-    void shouldReturnDataIntegrityViolationException_WhenToCreateAUserWithEmailInUser() {
-        Mockito.when(userRepository.findByEmail(anyString())).thenReturn(userOptional);
+    void shouldReturnBusinessException_WhenToCreateAUserWithEmailInUser() {
+        Mockito.when(userRepository.findByEmail(anyString())).thenReturn(user);
 
         try {
             userOptional.get().setId(2L);
-            userServiceImpl.create(dto);
+            userServiceImpl.create(user);
 
         }catch (Exception ex) {
-            assertEquals(DataIntegrityViolationException.class, ex.getClass());
+            assertEquals(BusinessException.class, ex.getClass());
             assertEquals(EMAIL_IN_USE, ex.getMessage());
         }
     }
@@ -128,7 +145,7 @@ class UserServiceImplTest {
     void shouldReturnSuccess_WhenUpdateToUser() {
         Mockito.when(userRepository.save(any())).thenReturn(user);
 
-        User response = userServiceImpl.update(dto);
+        User response = userServiceImpl.update(ID, user);
 
         assertNotNull(response);
         assertEquals(User.class, response.getClass());
@@ -140,15 +157,15 @@ class UserServiceImplTest {
     }
 
     @Test
-    void shouldReturnDataIntegrityViolationException_WhenToUpdateAUserWithEmailInUser() {
-        Mockito.when(userRepository.findByEmail(anyString())).thenReturn(userOptional);
+    void shouldReturnBusinessException_WhenToUpdateAUserWithEmailInUser() {
+        Mockito.when(userRepository.findByEmail(anyString())).thenReturn(user);
 
         try {
             userOptional.get().setId(2L);
-            userServiceImpl.update(dto);
+            userServiceImpl.update(ID, user);
 
         }catch (Exception ex) {
-            assertEquals(DataIntegrityViolationException.class, ex.getClass());
+            assertEquals(BusinessException.class, ex.getClass());
             assertEquals(EMAIL_IN_USE, ex.getMessage());
         }
     }
@@ -165,21 +182,26 @@ class UserServiceImplTest {
 
     @Test
     void shouldReturnObjectNotFoundException_WhenToDeleteUserWithIdThatDoesNotExist() {
-        Mockito.when(userRepository.findById(anyLong())).thenThrow(new ObjectNotFoundException(OBJECT_NOT_FOUND));
+        Mockito.when(userRepository.findById(anyLong())).thenThrow(new UserNotFoundException(USER_NOT_FOUND));
 
         try {
             userServiceImpl.delete(ID);
         }catch (Exception ex) {
-            assertEquals(ObjectNotFoundException.class, ex.getClass());
-            assertEquals(OBJECT_NOT_FOUND, ex.getMessage());
+            assertEquals(UserNotFoundException.class, ex.getClass());
+            assertEquals(USER_NOT_FOUND, ex.getMessage());
         }
     }
 
 
     private void prepareData() {
-        user = new User(ID, NAME, EMAIL, PASSWORD);
-        dto = new UserDTO(ID, NAME, EMAIL, PASSWORD);
-        userOptional = Optional.of(new User(ID, NAME, EMAIL, PASSWORD));
+
+        role = new Role(1L, "ROLE_USER");
+        roles.add(role);
+
+        user = new User(ID, NAME, EMAIL, PASSWORD, roles);
+
+        userOptional = Optional.of(new User(ID, NAME, EMAIL, PASSWORD, roles));
+        roleOptional = Optional.of(new Role(1L, "ROLE_USER"));
     }
 }
 
