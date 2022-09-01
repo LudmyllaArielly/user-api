@@ -18,8 +18,4 @@ public class RoleServiceImpl {
         return role;
     }
 
-    public Role findByRoleName(String roleName){
-        return roleRepository.findByRoleName(roleName);
-    }
-
 }

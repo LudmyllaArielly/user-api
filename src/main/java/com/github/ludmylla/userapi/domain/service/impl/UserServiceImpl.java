@@ -51,8 +51,9 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
     @Override
     public User findById(Long id) {
-        return userRepository.findById(id)
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
+        return user;
     }
 
     @Override
@@ -72,7 +73,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             User userActual = findById(id);
             user.setId(userActual.getId());
             validationUser(user);
-            userRepository.flush();
             return userRepository.save(user);
 
         } catch (RoleNotFoundException ex) {
@@ -95,12 +95,13 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         encryptPassword(user);
     }
 
-    private void findByEmailUsed(User user) {
+    private Optional<User> findByEmailUsed(User user) {
         Optional<User> userEmail = userRepository.findByEmailOptional(user.getEmail());
-
-        if (userEmail.isPresent() && !userEmail.get().equals(user)) {
+        System.out.println(userEmail);
+        if (userEmail.isPresent() && !userEmail.get().getId().equals(user.getId())) {
             throw new BusinessException(Messages.MSG_EMAIL_IN_USE);
         }
+        return userEmail;
     }
 
     private void verifyIfUserRoleExits(User user) {
