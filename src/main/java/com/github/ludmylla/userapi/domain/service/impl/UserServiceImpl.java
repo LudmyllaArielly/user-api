@@ -11,6 +11,7 @@ import com.github.ludmylla.userapi.domain.service.exceptions.RoleNotFoundExcepti
 import com.github.ludmylla.userapi.domain.service.exceptions.UserBadCredentialsException;
 import com.github.ludmylla.userapi.domain.service.exceptions.UserNotFoundException;
 import com.github.ludmylla.userapi.security.TokenProvider;
+import com.github.ludmylla.userapi.security.exceptions.AuthenticationException;
 import com.github.ludmylla.userapi.util.Messages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -77,6 +78,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             return new AuthToken(token);
         }catch (BadCredentialsException ex) {
             throw new UserBadCredentialsException("Authentication failed. Username or password not valid.");
+        }catch (Exception ex){
+            throw new AuthenticationException("There was an error with the authorization.", ex);
         }
     }
 
@@ -155,10 +158,10 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String email) throws UserNotFoundException {
         User user = findByEmail(email);
         if (user == null) {
-            throw new UsernameNotFoundException("User not found.");
+            throw new UserNotFoundException("User not found.");
         }
         return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), getAuthority(user));
     }
