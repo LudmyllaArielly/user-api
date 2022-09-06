@@ -45,7 +45,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 throw new AuthenticationException("There was an error getting the username from the token.", ex);
 
             } catch (ExpiredJwtException ex) {
-                throw new AuthenticationException("The token has expired.", ex);
+                logger.info("A bearer was not found or the header was ignored.");
 
             } catch (SignatureException ex) {
                 throw new AuthenticationException("Authentication failed. Username or password not valid.", ex);
@@ -57,7 +57,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 throw new AuthenticationException("Unsupported JWT token.", ex);
             }
         } else {
-            throw new AuthenticationException("A bearer was not found or the header was ignored.");
+            logger.info("A bearer was not found or the header was ignored.");
         }
 
         getAuthentication(username, authToken, request);
