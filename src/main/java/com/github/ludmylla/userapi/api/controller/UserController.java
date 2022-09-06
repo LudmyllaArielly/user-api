@@ -13,7 +13,6 @@ import com.github.ludmylla.userapi.security.TokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -77,7 +76,7 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserModel> findById(@PathVariable Long id) {
         User user = userService.findById(id);
-        return ResponseEntity.ok(userModelAssembler.toModel(user));
+        return ResponseEntity.ok().body(userModelAssembler.toModel(user));
     }
 
     @GetMapping("/findEmail")
@@ -90,11 +89,12 @@ public class UserController {
     public ResponseEntity<UserModel> update(@PathVariable Long id, @RequestBody @Valid UserInput userInput) {
         User user = userInputDisassembler.toDomainModel(userInput);
         user = userService.update(id, user);
-        return ResponseEntity.ok(userModelAssembler.toModel(user));
+        UserModel userModel = userModelAssembler.toModel(user);
+        return ResponseEntity.ok().body(userModel);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<UserModel> delete(@PathVariable Long id) {
         userService.delete(id);
         return ResponseEntity.noContent().build();
     }
