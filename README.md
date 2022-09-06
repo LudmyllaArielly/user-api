@@ -16,6 +16,9 @@
   - Maven
   - H2
   
+  #
+   <img src="projeto-user.gif" width="800px" height="600px">
+  
   
 ## Passos para configuração
 
