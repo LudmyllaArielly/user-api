@@ -8,16 +8,11 @@ import com.github.ludmylla.userapi.domain.dto.UserModel;
 import com.github.ludmylla.userapi.domain.dto.input.UserInput;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.service.UserService;
-import com.github.ludmylla.userapi.domain.service.exceptions.UserBadCredentialsException;
 import com.github.ludmylla.userapi.security.TokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -51,19 +46,8 @@ public class UserController {
 
     @PostMapping("/signIn")
     public ResponseEntity<?> login(@RequestBody @Valid LoginDTO loginDTO) {
-        try {
-            final Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginDTO.getEmail(),
-                            loginDTO.getPassword()));
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            final String token = tokenProvider.generateToken(authentication);
-            return ResponseEntity.ok(new AuthToken(token));
-
-        } catch (BadCredentialsException ex) {
-            throw new UserBadCredentialsException("Authentication failed. Username or password not valid.");
-        }
+        AuthToken login = userService.login(loginDTO);
+        return ResponseEntity.ok(login);
     }
 
     @GetMapping
@@ -76,7 +60,7 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserModel> findById(@PathVariable Long id) {
         User user = userService.findById(id);
-        return ResponseEntity.ok().body(userModelAssembler.toModel(user));
+        return ResponseEntity.ok(userModelAssembler.toModel(user));
     }
 
     @GetMapping("/findEmail")
@@ -90,7 +74,7 @@ public class UserController {
         User user = userInputDisassembler.toDomainModel(userInput);
         user = userService.update(id, user);
         UserModel userModel = userModelAssembler.toModel(user);
-        return ResponseEntity.ok().body(userModel);
+        return ResponseEntity.ok(userModel);
     }
 
     @DeleteMapping("/{id}")
