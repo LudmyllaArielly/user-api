@@ -2,31 +2,34 @@ package com.github.ludmylla.userapi.api.controller;
 
 import com.github.ludmylla.userapi.api.assembler.UserModelAssembler;
 import com.github.ludmylla.userapi.api.disassembler.UserInputDisassembler;
+import com.github.ludmylla.userapi.domain.dto.AuthToken;
+import com.github.ludmylla.userapi.domain.dto.LoginDTO;
 import com.github.ludmylla.userapi.domain.dto.UserModel;
 import com.github.ludmylla.userapi.domain.dto.input.RoleIdInput;
 import com.github.ludmylla.userapi.domain.dto.input.UserInput;
 import com.github.ludmylla.userapi.domain.model.Role;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.service.UserService;
-import com.github.ludmylla.userapi.security.TokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.modelmapper.ModelMapper;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 
-
+@SpringBootTest
 class UserControllerTest {
 
     public static final long ID = 1L;
@@ -36,28 +39,25 @@ class UserControllerTest {
     public static final int INDEX = 0;
 
     @Mock
-    ModelMapper mapper;
+    UserService userService;
 
     @Mock
-    UserService userService;
-    @Mock
-    AuthenticationManager authenticationManager;
-    @Mock
-    TokenProvider tokenProvider;
-    @Mock
     UserModelAssembler userModelAssembler;
+
     @Mock
     UserInputDisassembler userInputDisassembler;
+
     @InjectMocks
     UserController userController;
 
-    UserModel userModel;
-    UserInput userInput;
-    User user;
-    Role role;
-    RoleIdInput rolesId;
-    Set<RoleIdInput> roleIdInput = new HashSet<>();
-    Set<Role> roles = new HashSet<>();
+    private LoginDTO loginDTO;
+    private AuthToken authToken;
+    private UserInput userInput;
+    private User user;
+    private Role role;
+    private RoleIdInput rolesId;
+    private Set<RoleIdInput> roleIdInput = new HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 
 
     @BeforeEach
@@ -73,8 +73,11 @@ class UserControllerTest {
         ResponseEntity<UserModel> response = userController.findById(ID);
 
         assertNotNull(response);
-        assertNotNull(response.getBody());
 
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(ResponseEntity.class, response.getClass());
+
+        //assertEquals(ID, response.getBody().getId());
     }
 
     @Test
@@ -92,6 +95,18 @@ class UserControllerTest {
     }
 
     @Test
+    void shouldReturnSuccess_WhenToLogin() {
+        Mockito.when(userService.login(any())).thenReturn(authToken);
+
+        ResponseEntity<?> response = userController.login(loginDTO);
+
+        assertNotNull(response);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(ResponseEntity.class, response.getClass());
+    }
+
+    @Test
     void shouldReturnCreated_WhenToCreateUser() {
         Mockito.when(userService.create(any())).thenReturn(user);
 
@@ -105,7 +120,7 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldReturnSuccess_WhenToUpdateUser(){
+    void shouldReturnSuccess_WhenToUpdateUser() {
         Mockito.when(userService.update(anyLong(), any())).thenReturn(user);
 
         ResponseEntity<UserModel> response = userController.update(ID, userInput);
@@ -121,7 +136,7 @@ class UserControllerTest {
     }
 
     @Test
-    void shouldReturnSuccess_WhenToDeleteUser(){
+    void shouldReturnSuccess_WhenToDeleteUser() {
         Mockito.doNothing().when(userService).delete(anyLong());
 
         ResponseEntity<UserModel> response = userController.delete(ID);
@@ -135,7 +150,9 @@ class UserControllerTest {
                 .delete(anyLong());
     }
 
-    private void prepareData(){
+    private void prepareData() {
+        loginDTO = new LoginDTO(EMAIL, PASSWORD);
+
         role = new Role(1L, "ROLE_USER");
         roles.add(role);
 
