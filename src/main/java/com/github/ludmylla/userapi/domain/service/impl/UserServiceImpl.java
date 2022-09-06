@@ -1,17 +1,26 @@
 package com.github.ludmylla.userapi.domain.service.impl;
 
+import com.github.ludmylla.userapi.domain.dto.AuthToken;
+import com.github.ludmylla.userapi.domain.dto.LoginDTO;
 import com.github.ludmylla.userapi.domain.model.Role;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.repository.UserRepository;
 import com.github.ludmylla.userapi.domain.service.UserService;
 import com.github.ludmylla.userapi.domain.service.exceptions.BusinessException;
 import com.github.ludmylla.userapi.domain.service.exceptions.RoleNotFoundException;
+import com.github.ludmylla.userapi.domain.service.exceptions.UserBadCredentialsException;
 import com.github.ludmylla.userapi.domain.service.exceptions.UserNotFoundException;
+import com.github.ludmylla.userapi.security.TokenProvider;
 import com.github.ludmylla.userapi.util.Messages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -36,6 +45,12 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Autowired
     private RoleServiceImpl roleService;
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private TokenProvider tokenProvider;
+
     @Transactional
     @Override
     public User create(User user) {
@@ -46,6 +61,22 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             throw new BusinessException(ex.getMessage(), ex);
         } catch (DataIntegrityViolationException ex) {
             throw new BusinessException(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public AuthToken login(LoginDTO loginDTO) {
+        try {
+            final Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginDTO.getEmail(),
+                            loginDTO.getPassword()));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            final String token = tokenProvider.generateToken(authentication);
+            return new AuthToken(token);
+        }catch (BadCredentialsException ex) {
+            throw new UserBadCredentialsException("Authentication failed. Username or password not valid.");
         }
     }
 
