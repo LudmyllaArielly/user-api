@@ -2,6 +2,7 @@ package com.github.ludmylla.userapi.domain.service.exceptions;
 
 import com.github.ludmylla.userapi.api.exceptionHandler.ApiExceptionHandler;
 import com.github.ludmylla.userapi.api.exceptionHandler.Problem;
+import com.github.ludmylla.userapi.security.exceptions.AuthenticationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -75,6 +76,21 @@ public class ResourceExceptionHandleTest {
         assertNotNull(response.getBody());
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(ResponseEntity.class, response.getClass());
+        assertEquals(Problem.class, response.getBody().getClass());
+    }
+
+    @Test
+    void whenAuthenticationExceptionThenReturnAResponseEntity() {
+        ResponseEntity<?> response = apiExceptionHandler
+                .handleAuthenticationException(
+                        new AuthenticationException(""),
+                        request);
+
+        assertNotNull(response);
+        assertNotNull(response.getBody());
+
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertEquals(ResponseEntity.class, response.getClass());
         assertEquals(Problem.class, response.getBody().getClass());
     }
