@@ -1,21 +1,20 @@
 # User-api-junit-jwt 
 *Esse projeto é uma api de usuários com testes unitários, tratamento de exceções e spring security.*
-#####  :warning: A aplicação ainda está em andamento.
 
 ## Tecnologias usadas
 
 - String Framework
   - Spring Web
   - Spring Data Jpa
-  - String security
-  - Java 
-  - Model mapper
+  - String Security
+  - Java 11
+  - Model Mapper
   - Lombok
   - Junit5
   - Mockito
   - MySQL
   - Maven
-  - h2
+  - H2
   
   
 ## Passos para configuração
@@ -56,4 +55,41 @@ A Api foi geradada pelo pacote mvn package -P e esta sendo executada na porta 80
 
 Exemplo de endereço: http://localhost:8080/user-api
 
+## Explorar Rest APIs
+
+### Usuário
+
+| Method | Url                            | Description                              |
+| ------ | ------------------------------ | ---------------------------------------- |
+| GET    | /users                         | Lista todos usuários                     |
+| POST   | /users/signUp                  | Cria usuário                             |
+| POST   | /users/signIn                  | Login usuário                            |
+| PUT    | /users/1                       | Atualiza usuário                         |
+| GET    | /users/1                       | Busca usuário por id                     |
+| GET    | /users/email@xyz.com           | Busca o usuário por email                |
+| DELETE | /users/1                       | Deleta usuário                           |
+
+## Exemplo de corpo de solicitações JSON válidos
+
+##### Cria e atualiza usuário
+```json
+  {
+      "name": "ana",
+      "email": "ana@xyz.com",
+      "password": "123",
+      "roles": [
+          {
+            "id":2
+          }
+      ]
+  }
+```
+
+##### Login usuário
+```json
+  {
+    "email": "ana@xyz.com",
+    "password": "123"
+  }
+```
 
