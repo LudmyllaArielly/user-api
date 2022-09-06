@@ -12,7 +12,8 @@ public enum ProblemType {
     INVALID_DATA("/invalid-data","Invalid data."),
     SYSTEM_ERROR("/system-error","System error."),
     INVALID_PARAMETER("/invalid-parameter", "Invalid parameter."),
-    MESSAGE_INCOMPRESSIBLE("/message-incompressible.", "Message incompressible");
+    MESSAGE_INCOMPRESSIBLE("/message-incompressible.", "Message incompressible"),
+    NOT_AUTHORIZED("/not-authorized", "Not authorized");
 
     private String uri;
     private String title;
