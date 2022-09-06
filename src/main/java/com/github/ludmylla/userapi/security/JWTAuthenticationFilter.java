@@ -1,6 +1,7 @@
 package com.github.ludmylla.userapi.security;
 
 import com.github.ludmylla.userapi.domain.service.impl.UserServiceImpl;
+import com.github.ludmylla.userapi.security.exceptions.AuthenticationException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -41,19 +42,22 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             try {
                 username = tokenProvider.getUsernameFromToken(authToken);
             } catch (IllegalArgumentException ex) {
-                logger.error("There was an error getting the username from the token.", ex);
+                throw new AuthenticationException("There was an error getting the username from the token.", ex);
+
             } catch (ExpiredJwtException ex) {
-                logger.error("The token has expired.", ex);
+                throw new AuthenticationException("The token has expired.", ex);
+
             } catch (SignatureException ex) {
-                logger.error("Authentication failed. Username or password not valid.", ex);
+                throw new AuthenticationException("Authentication failed. Username or password not valid.", ex);
+
             } catch (MalformedJwtException ex) {
-                logger.error("Invalid JWT token.");
+                throw new AuthenticationException("Invalid JWT token.", ex);
+
             } catch (UnsupportedJwtException ex) {
-                logger.error("Unsupported JWT token.");
+                throw new AuthenticationException("Unsupported JWT token.", ex);
             }
         } else {
-
-            logger.warn("A bearer was not found or the header was ignored.");
+            throw new AuthenticationException("A bearer was not found or the header was ignored.");
         }
 
         getAuthentication(username, authToken, request);
