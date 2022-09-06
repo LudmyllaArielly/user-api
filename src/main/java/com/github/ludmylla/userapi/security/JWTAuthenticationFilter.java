@@ -1,7 +1,6 @@
 package com.github.ludmylla.userapi.security;
 
 import com.github.ludmylla.userapi.domain.service.impl.UserServiceImpl;
-import com.github.ludmylla.userapi.security.exceptions.AuthenticationException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -42,19 +41,21 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
             try {
                 username = tokenProvider.getUsernameFromToken(authToken);
             } catch (IllegalArgumentException ex) {
-                throw new AuthenticationException("There was an error getting the username from the token.", ex);
+                logger.info("There was an error getting the username from the token.");
 
             } catch (ExpiredJwtException ex) {
                 logger.info("A bearer was not found or the header was ignored.");
 
             } catch (SignatureException ex) {
-                throw new AuthenticationException("Authentication failed. Username or password not valid.", ex);
+                logger.info("Authentication failed. Username or password not valid.");
+
 
             } catch (MalformedJwtException ex) {
-                throw new AuthenticationException("Invalid JWT token.", ex);
+                logger.info("Invalid JWT token.");
+
 
             } catch (UnsupportedJwtException ex) {
-                throw new AuthenticationException("Unsupported JWT token.", ex);
+                logger.info("Unsupported JWT token.");
             }
         } else {
             logger.info("A bearer was not found or the header was ignored.");

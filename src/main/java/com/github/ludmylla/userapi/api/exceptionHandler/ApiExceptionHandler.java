@@ -7,7 +7,6 @@ import com.github.ludmylla.userapi.core.validation.ValidationException;
 import com.github.ludmylla.userapi.domain.service.exceptions.BusinessException;
 import com.github.ludmylla.userapi.domain.service.exceptions.EntityNotFoundException;
 import com.github.ludmylla.userapi.domain.service.exceptions.UserBadCredentialsException;
-import com.github.ludmylla.userapi.security.exceptions.AuthenticationException;
 import com.github.ludmylla.userapi.util.Messages;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.TypeMismatchException;
@@ -195,16 +194,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                 .objects(problemObjects)
                 .build();
 
-        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
-    }
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex, WebRequest request) {
-        HttpStatus status = HttpStatus.UNAUTHORIZED;
-        ProblemType problemType = ProblemType.NOT_AUTHORIZED;
-        String detail = ex.getMessage();
-
-        Problem problem = createProblemBuilder(status, problemType, detail).build();
         return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
     }
 
