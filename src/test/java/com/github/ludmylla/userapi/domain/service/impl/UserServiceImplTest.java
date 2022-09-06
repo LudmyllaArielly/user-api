@@ -11,7 +11,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.modelmapper.ModelMapper;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -46,9 +45,6 @@ class UserServiceImplTest {
 
     @Mock
     UserRepository userRepository;
-
-    @Mock
-    ModelMapper mapper;
 
     @InjectMocks
     UserServiceImpl userServiceImpl;
