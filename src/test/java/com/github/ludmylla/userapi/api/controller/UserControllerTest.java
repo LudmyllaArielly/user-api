@@ -28,6 +28,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
 
 @SpringBootTest
 class UserControllerTest {
@@ -78,6 +79,18 @@ class UserControllerTest {
         assertEquals(ResponseEntity.class, response.getClass());
 
         //assertEquals(ID, response.getBody().getId());
+    }
+
+    @Test
+    void shouldReturnSuccess_WhenToFindByEmailUser() {
+        Mockito.when(userService.findByEmail(anyString())).thenReturn(user);
+
+        ResponseEntity<UserModel> response = userController.findByEmail(EMAIL);
+
+        assertNotNull(response);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(ResponseEntity.class, response.getClass());
     }
 
     @Test
