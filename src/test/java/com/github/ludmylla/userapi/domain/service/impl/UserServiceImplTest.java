@@ -75,6 +75,19 @@ class UserServiceImplTest {
     }
 
     @Test
+    void shouldReturnSuccess_WhenToConsultFindByEmailUser() {
+        Mockito.when(userRepository.findByEmail(anyString())).thenReturn(user);
+
+        User response = userServiceImpl.findByEmail(EMAIL);
+
+        assertNotNull(response);
+        assertEquals(User.class, response.getClass());
+        assertEquals(ID, response.getId());
+        assertEquals(NAME, response.getName());
+        assertEquals(EMAIL, response.getEmail());
+    }
+
+    @Test
     void shouldReturnUserNotFoundException_WhenToConsultUserWithIdThatDoesNotExist() {
         Mockito.when(userRepository.findById(anyLong())).thenThrow(new UserNotFoundException(USER_NOT_FOUND));
 
