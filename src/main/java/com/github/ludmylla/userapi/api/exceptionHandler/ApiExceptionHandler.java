@@ -7,7 +7,7 @@ import com.github.ludmylla.userapi.core.validation.ValidationException;
 import com.github.ludmylla.userapi.domain.service.exceptions.BusinessException;
 import com.github.ludmylla.userapi.domain.service.exceptions.EntityNotFoundException;
 import com.github.ludmylla.userapi.domain.service.exceptions.UserBadCredentialsException;
-import com.github.ludmylla.userapi.domain.service.exceptions.UserNotFoundException;
+import com.github.ludmylla.userapi.security.exceptions.AuthenticationException;
 import com.github.ludmylla.userapi.util.Messages;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.beans.TypeMismatchException;
@@ -18,7 +18,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -41,7 +40,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     private MessageSource messageSource;
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, WebRequest request){
+    public ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
         HttpStatus status = HttpStatus.UNAUTHORIZED;
         ProblemType problemType = ProblemType.INVALID_DATA;
         String detail = ex.getMessage();
@@ -196,6 +195,16 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                 .objects(problemObjects)
                 .build();
 
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex, WebRequest request) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        ProblemType problemType = ProblemType.NOT_AUTHORIZED;
+        String detail = ex.getMessage();
+
+        Problem problem = createProblemBuilder(status, problemType, detail).build();
         return handleExceptionInternal(ex, problem, new HttpHeaders(), status, request);
     }
 
