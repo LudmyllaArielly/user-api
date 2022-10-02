@@ -29,5 +29,7 @@ public class Role implements GrantedAuthority {
         return roleName;
     }
 
-
+    public Role(Long id) {
+        this.id = id;
+    }
 }

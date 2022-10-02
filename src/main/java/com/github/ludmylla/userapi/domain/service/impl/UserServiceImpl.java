@@ -1,20 +1,31 @@
 package com.github.ludmylla.userapi.domain.service.impl;
 
+import com.github.ludmylla.userapi.domain.dto.AuthToken;
+import com.github.ludmylla.userapi.domain.dto.LoginDTO;
 import com.github.ludmylla.userapi.domain.model.Role;
 import com.github.ludmylla.userapi.domain.model.User;
 import com.github.ludmylla.userapi.domain.repository.UserRepository;
 import com.github.ludmylla.userapi.domain.service.UserService;
 import com.github.ludmylla.userapi.domain.service.exceptions.BusinessException;
 import com.github.ludmylla.userapi.domain.service.exceptions.RoleNotFoundException;
+import com.github.ludmylla.userapi.domain.service.exceptions.UserBadCredentialsException;
+import com.github.ludmylla.userapi.domain.service.exceptions.UserNotFoundException;
+import com.github.ludmylla.userapi.security.TokenProvider;
 import com.github.ludmylla.userapi.util.Messages;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -33,22 +44,46 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Autowired
     private RoleServiceImpl roleService;
 
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private TokenProvider tokenProvider;
+
+    @Transactional
     @Override
     public User create(User user) {
         try {
             validationUser(user);
             return userRepository.save(user);
-        }catch (RoleNotFoundException ex) {
+        } catch (RoleNotFoundException ex) {
             throw new BusinessException(ex.getMessage(), ex);
-        }catch (DataIntegrityViolationException ex){
-            throw  new BusinessException(ex.getMessage(), ex);
+        } catch (DataIntegrityViolationException ex) {
+            throw new BusinessException(ex.getMessage(), ex);
+        }
+    }
+
+    @Override
+    public AuthToken login(LoginDTO loginDTO) {
+        try {
+            final Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginDTO.getEmail(),
+                            loginDTO.getPassword()));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            final String token = tokenProvider.generateToken(authentication);
+            return new AuthToken(token);
+        } catch (BadCredentialsException ex) {
+            throw new UserBadCredentialsException("Authentication failed. Username or password not valid.");
         }
     }
 
     @Override
     public User findById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new UsernameNotFoundException("Object not found."));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        return user;
     }
 
     @Override
@@ -57,10 +92,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public List<User> findAll() {
+    public List<User> findAll() throws AccessDeniedException {
         return userRepository.findAll();
     }
 
+    @Transactional
     @Override
     public User update(Long id, User user) {
         try {
@@ -68,39 +104,44 @@ public class UserServiceImpl implements UserService, UserDetailsService {
             user.setId(userActual.getId());
             validationUser(user);
             return userRepository.save(user);
-        }catch (RoleNotFoundException ex){
+
+        } catch (RoleNotFoundException ex) {
+            throw new BusinessException(ex.getMessage(), ex);
+        } catch (DataIntegrityViolationException ex) {
             throw new BusinessException(ex.getMessage(), ex);
         }
     }
 
+    @Transactional
     @Override
     public void delete(Long id) {
         findById(id);
         userRepository.deleteById(id);
     }
 
-    private void validationUser(User user){
+    private void validationUser(User user) {
         findByEmailUsed(user);
         verifyIfUserRoleExits(user);
         encryptPassword(user);
     }
 
-    private void findByEmailUsed(User user) {
+    private Optional<User> findByEmailUsed(User user) {
         Optional<User> userEmail = userRepository.findByEmailOptional(user.getEmail());
-
-        if (userEmail.isPresent() && !userEmail.get().equals(user)) {
+        System.out.println(userEmail);
+        if (userEmail.isPresent() && !userEmail.get().getId().equals(user.getId())) {
             throw new BusinessException(Messages.MSG_EMAIL_IN_USE);
         }
+        return userEmail;
     }
 
-    private void verifyIfUserRoleExits(User user){
+    private void verifyIfUserRoleExits(User user) {
         Set<Role> roles = new HashSet<>();
 
-        for(Role role: user.getRoles()){
+        for (Role role : user.getRoles()) {
 
             Role roleFindById = roleService.findById(role.getId());
 
-            if(roleFindById == null){
+            if (roleFindById == null) {
                 throw new RoleNotFoundException("Role not exist.");
             }
             roles.add(roleFindById);
@@ -108,15 +149,15 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         }
     }
 
-    private void encryptPassword(User user){
+    private void encryptPassword(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String email) throws UserNotFoundException {
         User user = findByEmail(email);
         if (user == null) {
-            throw new UsernameNotFoundException("User not found.");
+            throw new UserNotFoundException("User not found.");
         }
         return new org.springframework.security.core.userdetails.User(user.getEmail(), user.getPassword(), getAuthority(user));
     }

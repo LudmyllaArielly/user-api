@@ -19,6 +19,8 @@
   #
    <img src="projeto-user.gif" width="800px" height="600px">
   
+#
+<img src="resources/gif/project-user.gif">
   
 ## Passos para configuração
 
