@@ -1,5 +1,5 @@
-# User-api-junit-jwt 
-*Esse projeto é uma api de usuários com testes unitários, tratamento de exceções e spring security.*
+# User-api-junit-jwt :coffee:
+*Esse projeto é uma api de usuários com testes unitários, tratamento de exceções, autenticação e autorização.*
 
 ## Tecnologias usadas
 
@@ -15,12 +15,6 @@
   - MySQL
   - Maven
   - H2
-  
-  #
-   <img src="projeto-user.gif" width="800px" height="600px">
-  
-#
-<img src="resources/gif/project-user.gif">
   
 ## Passos para configuração
 
